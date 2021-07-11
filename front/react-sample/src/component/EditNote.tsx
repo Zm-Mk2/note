@@ -1,24 +1,32 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Note } from '../Types'
-import styled from 'styled-components'
+import React, { useState, useEffect } from 'react'
 import axios, { AxiosError, AxiosResponse } from 'axios'
-import { getNodeText } from '@testing-library/react'
-import { Button } from '@material-ui/core'
+import styled from 'styled-components'
+import { Note } from '../Types'
 
-
-const Subbutton = styled(Button)`
+const Detailtext = styled.textarea`
+  position: absolute;
+  padding-top: 2%;
+  left: 25%;
+  height: 95%;
+  width: 74%;
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  resize: none;
+  &:focus {
+      outline: none;
+  }
 `
-
-const InitialNote: Note = {
-    id: "",
-    content: ""
+type Props = {
+    changeCurrentNote: Function
+    changeUpdated: Function
+    currentNote: Note
+    updated: Boolean
 }
 
-function EditNote(props: Note) {
-    const [currentNote, setCurrentNote] = useState<Note>(InitialNote)
-    const textAreaRef = useRef<HTMLTextAreaElement>(null!)
-    const documentClickHandler = useRef<EventListener>(null!)
+const InitialContent: string = "New Note..."
 
+function EditNote(props: Props) {
 
     const axiosBase = require('axios')
     const axios = axiosBase.create({
@@ -30,53 +38,23 @@ function EditNote(props: Note) {
         ResponseType: 'json'
     })
 
-    const getNote = (id: string) => {
-        console.log(`id(getNote):${id}`)
-        axios.get(`/notes/${id}`)
-        .then((resp: AxiosResponse) => {
-            setCurrentNote(resp.data)
-        })
-        .catch((e: AxiosError) => {
-        })
-    }
-
-    useEffect(() => {
-        documentClickHandler.current = (e: any) => {
-            console.log('documentClickHandler')
-            if (textAreaRef.current.contains(e.target)) return
-
-            console.log(`e:${e}`)
-            removeDocumentClickHandler()
-            const test: Note = {
-                id: props.id,
-                content: props.content + "test"
-            }
-            console.log('update-start')
-            /*updateNote(currentNote)*/
-            console.log('update-end')
-        }
-        console.log('getNote-start')
-        getNote(props.id)
-        console.log('getNote-end')
-    }, [props.id])
-
-    const removeDocumentClickHandler = () => {
-        console.log('removeDocumentClickHandler')
-
-        document.removeEventListener('click', documentClickHandler.current)
-    }
-
     const handleTextAreaClick = () => {
-        console.log('handleTextAreaClick')
-        
-        document.addEventListener('click', documentClickHandler.current)
+        if (props.currentNote.content === InitialContent) {
+            var data: Note = {
+                id: props.currentNote.id,
+                content: ""
+            }
+            props.changeCurrentNote(data)
+        }
+        props.changeUpdated()
       }
 
     const updateNote = (data: Note) => {
         axios.patch(`/notes/${data.id}`, data)
         .then((resp: AxiosResponse) => {
             console.log(resp)
-            setCurrentNote(resp.data)
+            props.changeCurrentNote(resp.data)
+            props.changeUpdated(props.updated)
         })
         .catch((e: AxiosError) => {
             console.log(`AxiosError(updateNote):${e}`)
@@ -85,27 +63,32 @@ function EditNote(props: Note) {
 
     const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
         var data: Note = {
-            id: props.id,
+            id: props.currentNote.id,
             content: event.target.value
         }
-        setCurrentNote(data)
-        console.log('handleInputChange-done')
+        props.changeCurrentNote(data)
+    }
+
+    const onBlur = () => {
+        if (!props.currentNote.content) {
+            var data: Note = {
+                id: props.currentNote.id,
+                content: InitialContent
+            }
+            updateNote(data)
+        } else {
+            updateNote(props.currentNote)
+        }
     }
 
     return (
         <>
-            <form>
-                <textarea
-                    value={currentNote.content}
-                    onChange={handleInputChange}
-                    ref={textAreaRef}
-                    onClick={handleTextAreaClick}
-                />
-                {props.content}
-            </form>
-            <Button variant="contained" onClick={() => updateNote(currentNote)}>
-                update
-            </Button>
+            <Detailtext
+                value={props.currentNote.content}
+                onChange={handleInputChange}
+                onClick={handleTextAreaClick}
+                onBlur={onBlur}
+            />
         </>
     )
 }

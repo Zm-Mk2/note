@@ -29,8 +29,9 @@ class NotesController < ApplicationController
     end
 
     def destroy
-        if Note.destroy(params[:id])
-            head :no_content
+        note = Note.find(params[:id])
+        if note.destroy
+            render json: note
         else
             render json: { error: "Failed to destroy" }, status: 422
         end        
