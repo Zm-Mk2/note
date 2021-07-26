@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Switch, Route, Link, Redirect } from 'react-router-dom'
 import styled from 'styled-components'
 import { BiAddToQueue, BiInfoCircle } from 'react-icons/bi'
@@ -11,8 +11,9 @@ import ReorderOutlinedIcon from '@material-ui/icons/ReorderOutlined'
 import PostAddOutlinedIcon from '@material-ui/icons/PostAddOutlined'
 import InfoOutlinedIcon from '@material-ui/icons/InfoOutlined'
 import DeleteOutlineIcon from '@material-ui/icons/DeleteOutline'
-import { Note } from './Types'
+import { Note, Coord, Window } from './Types'
 import axios, { AxiosError, AxiosResponse } from 'axios'
+import { useWindowSize } from 'react-use'
 
 const Nabvar = styled.nav`
   background: #ffffff;
@@ -51,7 +52,6 @@ const Itembutton = styled.button`
   font-color: #bec8d1;
   padding: 5px;
 `
-
 const InitialNote: Note = {
   id: "",
   content: ""
@@ -64,11 +64,11 @@ function App() {
   const [notes, setNotes] = useState<Note[]>([])
   const [currentNote, setCurrentNote] = useState<Note>(InitialNote)
   const [updated, setUpdated] = useState<Boolean>(false)
+  const window: Window = useWindowSize()
 
   useEffect(() => {
     console.log("********App-描画*******************")
   }, [updated])
-
 
   const changeNotes = (notes: Note[]) => {
     setNotes(notes)
@@ -121,6 +121,7 @@ function App() {
         newNotes.splice(targetIndex, 1)
         setNotes(newNotes)
         setUpdated(updated)
+        setCurrentNote(InitialNote)
       })
       .catch((e: AxiosError) => {
         console.log(e)
@@ -154,6 +155,7 @@ function App() {
         changeUpdated={changeUpdated}
         currentNote={currentNote}
         updated={updated}
+        window={window}
       />
       <NoteList
         changeNotes={changeNotes}
@@ -161,6 +163,7 @@ function App() {
         changeCurrentNote={changeCurrentNote}
         currentNote={currentNote}
         updated={updated}
+        window={window}
       />
     </>
   )

@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import axios, { AxiosError, AxiosResponse } from 'axios'
-import { Note } from '../Types'
+import { Note, Coord, Window } from '../Types'
 import SearchOutlinedIcon from '@material-ui/icons/SearchOutlined'
 import { Button } from '@material-ui/core'
 import { Scrollbars } from 'react-custom-scrollbars'
+import { useWindowSize } from 'react-use'
+import { number } from 'yargs'
 
 
 const ListRow = styled.nav`
@@ -32,7 +34,7 @@ const Sarchicon = styled(SearchOutlinedIcon)`
 
 const Searchform = styled.input`
   border: none;
-  width: 90%;
+  width: 80%;
   background-color: #f0f2f5;
   &:focus {
       outline: none;
@@ -59,11 +61,21 @@ type Props = {
     changeCurrentNote: Function
     currentNote: Note
     updated: Boolean
+    window: Window
+}
+
+const InitialCoord: Coord = {
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0
 }
 
 function NoteList(props: Props) {
     
     const [searchName, setSearchName] = useState<string>('')
+    const [listCoordRect, setListCoordRect] = useState(InitialCoord)
+    const listCoordRef = useRef<HTMLDivElement>(null)
 
     const axiosBase = require('axios')
     const axios = axiosBase.create({
@@ -87,6 +99,14 @@ function NoteList(props: Props) {
         console.log("****************描画*******************")
     }, [props.updated])
 
+    useEffect(() => {
+        if (listCoordRef && listCoordRef.current) {
+            const nowCoord: Coord = listCoordRef.current.getBoundingClientRect()
+            setListCoordRect(nowCoord)
+        }
+        console.log("****************描画2******************")
+    },[props.window.width, props.window.height])
+
     return (
         <>
             <ListRow>
@@ -102,21 +122,25 @@ function NoteList(props: Props) {
                         />
                     </Searchborder>
                 </Searchrow>
-                <Scrollbars autoHide autoHeight autoHeightMin={50} autoHeightMax="calc(90vh)" >
-                    {props.notes.filter((val: Note) => {
-                        if(searchName === "") {
-                            return val
-                        } else if (val.content.toLowerCase().includes(searchName.toLowerCase())) {
-                            return val
-                        }
-                    }).map((val: Note, key: number) => {
-                        return (
-                            <Row key={key} onClick={() => {props.changeCurrentNote(val)}}>
-                                {val.content}
-                            </Row>
-                        )
-                    })}
-                </Scrollbars>
+                <div ref={listCoordRef}>
+                    {//left: {listCoordRect.left}, top: {listCoordRect.top}, right: {listCoordRect.right}, bottom: {listCoordRect.bottom}
+                    }
+                    <Scrollbars autoHide autoHeight autoHeightMin={200} autoHeightMax={props.window.height - listCoordRect.top}>
+                        {props.notes.filter((val: Note) => {
+                            if(searchName === "") {
+                                return val
+                            } else if (val.content.toLowerCase().includes(searchName.toLowerCase())) {
+                                return val
+                            }
+                        }).map((val: Note, key: number) => {
+                            return (
+                                <Row key={key} onClick={() => {props.changeCurrentNote(val)}}>
+                                    {val.content}
+                                </Row>
+                            )
+                        })}
+                    </Scrollbars>
+                </div>
             </ListRow>
         </>
     )

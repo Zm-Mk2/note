@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import axios, { AxiosError, AxiosResponse } from 'axios'
 import styled from 'styled-components'
-import { Note } from '../Types'
+import { Note, Coord, Window } from '../Types'
+import { Scrollbars } from 'react-custom-scrollbars'
 
-const Detailtext = styled.textarea`
-  position: absolute;
-  padding-top: 2%;
+const Detail = styled.div`
   left: 25%;
-  height: 95%;
-  width: 74%;
+`
+
+const Detailtext = styled.textarea<{ taSize: TextareaSize}>`
+  position: absolute;
+  left: 25%;
+  width: ${({ taSize }) => taSize.width - 10}px;
+  height: ${({ taSize }) => taSize.height - 50}px;
+  padding-top: 50px;
   font-family: inherit;
   font-size: inherit;
   border: none;
@@ -17,16 +22,39 @@ const Detailtext = styled.textarea`
       outline: none;
   }
 `
+
 type Props = {
     changeCurrentNote: Function
     changeUpdated: Function
     currentNote: Note
     updated: Boolean
+    window: Window
+}
+
+type TextareaSize = {
+    width: number
+    height: number
 }
 
 const InitialContent: string = "New Note..."
 
+const InitialCoord: Coord = {
+    left: 0,
+    top: 0,
+    right: 0,
+    bottom: 0
+}
+
+const InitialTaSize: TextareaSize = {
+    width: 0,
+    height: 0
+}
+
 function EditNote(props: Props) {
+
+    const [detailCoordRect, setDetailCoordRect] = useState(InitialCoord)
+    const detailCoordRef = useRef<HTMLTextAreaElement>(null)
+    const [taSize, setTaSize] = useState(InitialTaSize)
 
     const axiosBase = require('axios')
     const axios = axiosBase.create({
@@ -37,6 +65,21 @@ function EditNote(props: Props) {
         },
         ResponseType: 'json'
     })
+
+    useEffect(() => {
+        if (detailCoordRef && detailCoordRef.current) {
+            const nowCoord: Coord = detailCoordRef.current.getBoundingClientRect()
+            setDetailCoordRect(nowCoord)
+            var widthData: number = props.window.width - nowCoord.left
+            var heightData: number = props.window.height - nowCoord.top
+            var data: TextareaSize = {
+                width: widthData,
+                height: heightData
+            }
+            setTaSize(data)
+            console.log("************描画-EditNote*************")
+        }
+      },[props.window.width, props.window.height])
 
     const handleTextAreaClick = () => {
         if (props.currentNote.content === InitialContent) {
@@ -83,7 +126,7 @@ function EditNote(props: Props) {
 
     return (
         <>
-            <Detailtext
+            <Detailtext taSize={taSize} ref={detailCoordRef}
                 value={props.currentNote.content}
                 onChange={handleInputChange}
                 onClick={handleTextAreaClick}
